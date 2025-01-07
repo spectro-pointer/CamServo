@@ -1,17 +1,3 @@
-/*
-SIMPLE LANC REMOTE
-Version 1.0
-Sends LANC commands to the LANC port of a video camera.
-Tested with a Canon XF300 camcorder
-For the interface circuit interface see 
-http://controlyourcamera.blogspot.com/2011/02/arduino-controlled-video-recording-over.html
-Feel free to use this code in any way you want.
-2011, Martin Koch
-
-"LANC" is a registered trademark of SONY.
-CANON calls their LANC compatible port "REMOTE".
-*/
-
 #include <Arduino.h>
 
 #define infoPin 13
@@ -88,34 +74,32 @@ void setup() {
   delay(5000); //Wait for camera to power up completly
   bitDuration = bitDuration - 8; //Writing to the digital port takes about 8 microseconds so only 96 microseconds are left for each bit
 }
-
 void loop() {
-  unsigned lastZoomStart = millis();
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
 
-  while (millis()-lastZoomStart < 1000) {
-    lancCommand(ZOOM_IN_7);
+    if (command.equalsIgnoreCase("1")) {
+      Serial.println("Ejecutando Zoom In");
+      unsigned long lastZoomStart = millis();
+      while (millis() - lastZoomStart < 1000) {
+        lancCommand(ZOOM_IN_7);
+      }
+    } else if (command.equalsIgnoreCase("2")) {
+      Serial.println("Ejecutando Zoom Out");
+      unsigned long lastZoomStart = millis();
+      while (millis() - lastZoomStart < 1000) {
+        lancCommand(ZOOM_OUT_7);
+      }
+    } else if (command.equalsIgnoreCase("3")) {
+      Serial.println("Ejecutando REC");
+      lancCommand(REC);
+      delay(3000);
+      lancCommand(REC);
+    } else {
+      Serial.println("Comando no reconocido. Use 'zoom in', 'zoom out' o 'rec'.");
+    }
   }
-
-  delay(5000);
-
-  lastZoomStart = millis();
-
-  while (millis()-lastZoomStart < 1000) {
-    lancCommand(ZOOM_OUT_7);
-  }
-
-  delay(5000);
-
-  lancCommand(POWER_OFF);
-
-  delay(10000);
-
-  digitalWrite(cmdPin, HIGH);
-  delay(150);
-  digitalWrite(cmdPin, LOW);
-
-  delay(5000);
-
 }
 
 
@@ -169,38 +153,3 @@ void lancCommand(boolean lancBit[]) {
  }  //While cmdRepeatCount < 5
  digitalWrite(infoPin, LOW);
 }
-
-// #include <Commands/ZoomCommand.h>
-// #include <LibLanc.h>
-
-// #include <memory>
-
-// // LibLanc
-// // by Simon Ensslen <https://github.com/sensslen>
-// // This example illustrates the usage of the liblanc library in blocking mode
-
-// #define LANC_INPUT_PIN 2
-// #define LANC_OUTPUT_PIN 3
-// std::unique_ptr<LibLanc::App::Lanc> lanc;
-
-// void setup()
-// { 
-//     Serial.begin(115200);
-//     LibLanc::LancBuilder lancBuilder;
-//     lancBuilder.UseTwoPinPhysicalLayer(LANC_INPUT_PIN, LANC_OUTPUT_PIN, LibLanc::Phy::OutputType::PushPull);
-//     lanc = lancBuilder.CreateBlocking();
-//     lanc->begin();
-// }
-
-// void loop()
-// { 
-
-//     static unsigned long lastCommandSent = millis();
-//     if (millis()-lastCommandSent > 5000) {
-//       Serial.println("Sending zoom command");
-//       lastCommandSent = millis();
-//       lanc->setCommand(LibLanc::CommandFactory::zoom(3));
-//     }
-
-//     lanc->loop();
-// }
